@@ -95,13 +95,13 @@ body.foot_y_range = 0.15;
 body.foot_z_range = 0.3;
 
 % output force range
-body.max_zforce = 100;
+body.max_zforce = 1000;
 
-% calaute 2 hip positions
-body.hip_vec = [0; body.width/2; 0];
-body.hip_dir_mat = [0 0; 1 -1; 0 0]; % 3,2 hip vec
-body.hip_pos = body.hip_dir_mat .* repmat(body.hip_vec,1,2); % 3,2 hip pos vec
-body.foot_pos = repmat([0; 0; -0.6*ctr.init_z],1,2); % init foot pos
+% calaute hip position
+body.hip_vec = [body.length/2; body.width/2; 0];
+body.hip_dir_mat = [1 1 -1 -1; 1 -1 1 -1; 0 0 0 0];
+body.hip_pos = body.hip_dir_mat .* repmat(body.hip_vec,1,4);
+body.foot_pos = repmat([0; 0; -0.6*ctr.init_z],1,4); % init foot pos
 
 body.phip_swing_ref = body.hip_pos + body.foot_pos;
 % ref foot pos at swing phase
