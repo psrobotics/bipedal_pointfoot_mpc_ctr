@@ -23,16 +23,16 @@ ub_state_arr = repmat(ub_state,ctr_p.N+1,1);
 lb_state_arr = repmat(lb_state,ctr_p.N+1,1);
 
 % leg force
-ub_f_leg = [body_p.m*world_p.g*world_p.fk*50; body_p.m*world_p.g*world_p.fk*50; body_p.max_zforce]; %xyz maximum leg force
-lb_f_leg = [-1*body_p.m*world_p.g*world_p.fk*50; -1*body_p.m*world_p.g*world_p.fk*50; 0]; %minimum leg force
-ub_f = repmat(ub_f_leg,4,1); % for 4 legs
-lb_f = repmat(lb_f_leg,4,1);
+ub_f_leg = [body_p.m*world_p.g*world_p.fk; body_p.m*world_p.g*world_p.fk; body_p.max_zforce]; %xyz maximum leg force
+lb_f_leg = [-1*body_p.m*world_p.g*world_p.fk; -1*body_p.m*world_p.g*world_p.fk; 0]; %minimum leg force
+ub_f = repmat(ub_f_leg,2,1); % for 2 legs *
+lb_f = repmat(lb_f_leg,2,1);
 ub_f_arr = repmat(ub_f,ctr_p.N,1);
 lb_f_arr = repmat(lb_f,ctr_p.N,1);
 
 % foot pos
-ub_fp = repmat([0.4;0.4;inf],4,1);
-lb_fp = repmat([-0.4;-0.4;-inf],4,1);
+ub_fp = repmat([0.4;0.4;inf],2,1); % for 2 legs
+lb_fp = repmat([-0.4;-0.4;-inf],2,1);
 ub_fp_arr = repmat(ub_fp,ctr_p.N,1);
 lb_fp_arr = repmat(lb_fp,ctr_p.N,1);
 

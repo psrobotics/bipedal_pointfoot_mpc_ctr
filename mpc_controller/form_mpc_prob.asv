@@ -30,10 +30,10 @@ fp_dim = body_p.fp_dim; % number of dim of leg pos, 3*4
 % equal constraints
 mpc_c.eq_con_dynamic = SX.zeros(state_dim*(N+1),1); % dynamic constraint, 12*(N+1),1
 mpc_c.eq_con_foot_contact_ground = SX.zeros(2*N,1); % constraint on leg's motion range, 2*N,1 *
-mpc_c.eq_con_foot_non_slip = SX.zeros(fp_dim*N,1); % constraint on foot's non slip stane phase, 6*N,1
+mpc_c.eq_con_foot_non_slip = SX.zeros(fp_dim*N,1); % constraint on foot's non slip stane phase, 12*N,1
 mpc_c.eq_con_init_state = mpc_v.x_ref_arr(:,1)-mpc_v.x_arr(:,1); % set init condition constraint, 12,1
 
-mpc_c.eq_con_dim = state_dim*(N+1) + 2*N + fp_dim*N + 12; % dim for eq constraints
+mpc_c.eq_con_dim = state_dim*(N+1) + 4*N + fp_dim*N + 12; % dim for eq constraints
 
 % inequal constraints 
 mpc_c.ineq_con_foot_range = SX.zeros(2*6*N,1); % ieq constraint on foot's motion range 2 legs*3 axis*2 dir *
@@ -65,7 +65,7 @@ for k = 1:N
     % dynamic equation constraint
     mpc_c.eq_con_dynamic(state_dim*(k-1)+1:state_dim*k) = x_next - (x_t + dyn_f(x_t,f_t,fp_t)*dt_t);
     % zforce direction always point up
-    mpc_c.ineq_con_zforce_dir(k) = -1*dot(f_t,repmat([0;0;1],2,1)); % * 2 legs, dot out 1 value
+    mpc_c.ineq_con_zforce_dir(k) = -1*dot(f_t,repmat([0;0;1],2,1)); % * 2 legs
     % zforce range < max z force
     mpc_c.ineq_con_zforce_range(2*(k-1)+1:2*k) = f_t([3,6]) - contact_mat_t.*repmat(body_p.max_zforce,2,1); % * 2 legs
     
@@ -81,19 +81,18 @@ for k = 1:N
         hip_pos_global_t = rot_zyx_t*body_p.phip_swing_ref + x_t(4:6);
         leg_vec_t = (fp_g_t(xyz_i) - hip_pos_global_t(:,leg_k)); % leg vector, from hip to foot
 
-        mpc_c.ineq_con_foot_range(2*6*(k-1)+6*(leg_k-1)+1: 2*6*(k-1)+6*leg_k) =...
+        mpc_c.ineq_con_foot_range(2*6*(k-1)+3*(leg_k-1)+1: 2*6*(k-1)+3*leg_k) =...
             body_p.foot_convex_hull*[leg_vec_t;1]; % leg's motion range limit * 2 legs
         
-        % ground reaction force within friction cone 
-        % * 2 legs *  2 +- dir * 2 axis, xy // 4 = 2 axis * 2 dir
-        mpc_c.ineq_con_foot_friction(2*4*(k-1)+2*2*(leg_k-1)+1: 2*4*(k-1)+2*2*leg_k) = world_p.friction_cone*f_t(xyz_i);
+        %%
+        % ground reaction force within friction cone * 2 legs
+        mpc_c.ineq_con_foot_friction(16*(k-1)+4*(leg_k-1)+1: 16*(k-1)+4*leg_k) = world_p.friction_cone*f_t(xyz_i);
         
         % non-slip, if leg touches the ground, ffp_now = ffp_next
         if(k<N)
-            fp_g_next = repmat(x_next(4:6),2,1)+mpc_v.fp_arr(:,k+1); % next foot pos in global coord * 2 legs
-
-            mpc_c.eq_con_foot_non_slip(2*3*(k-1)+3*(leg_k-1)+1: 2*3*(k-1)+3*leg_k) =...
-                contact_mat_t(leg_k)*(fp_g_next(xyz_i)-fp_g_t(xyz_i)); % * 2 legs * 3 axis, x,y,z
+            fp_g_next = repmat(x_next(4:6),4,1)+mpc_v.fp_arr(:,k+1); % next foot pos in global coord
+            mpc_c.eq_con_foot_non_slip(12*(k-1)+3*(leg_k-1)+1: 12*(k-1)+3*leg_k) =...
+                contact_mat_t(leg_k)*(fp_g_next(xyz_i)-fp_g_t(xyz_i));
         end
         
     end
@@ -101,13 +100,13 @@ for k = 1:N
     % Add up errors to cost fcn
     x_err = x_t - x_ref_t; % state error
     f_err = f_t - f_ref_t; % leg force error
-    % foot placement pos error. may change to fp_ref_t with fpp planner *
-    fp_err = fp_g_t - fp_ref_t;
+    % foot placement pos error. may change to fp_ref_t with fpp planner
+    fp_err = repmat(x_t(4:6),4,1) + body_p.phip_swing_ref_vec - fp_g_t; 
     
-    % running cost * 2 legs
+    % running cost
     mpc_v.cost_fcn = mpc_v.cost_fcn + (x_err'*diag(ctr_p.weight.QX)*x_err...
-                           + f_err'*diag(repmat(ctr_p.weight.Qf,2,1))*f_err...
-                           + fp_err'*diag(repmat(ctr_p.weight.Qc,2,1))*fp_err) * dt_t;
+                           + f_err'*diag(repmat(ctr_p.weight.Qf,4,1))*f_err...
+                           + fp_err'*diag(repmat(ctr_p.weight.Qc,4,1))*fp_err) * dt_t;
                        
 end
 
@@ -124,11 +123,11 @@ mpc_c.constraint_arr = [mpc_c.eq_con_init_state; mpc_c.eq_con_dynamic; mpc_c.eq_
 mpc_v.opt_variables = [reshape(mpc_v.x_arr, state_dim*(N+1),1);...
                        reshape(mpc_v.f_arr, f_dim*N,1);...
                        reshape(mpc_v.fp_arr, fp_dim*N,1)];
-% reform, reference state, leg force, foot pos into one n*1 vector * 2 legs
+% reform, reference state, leg force, foot pos into one n*1 vector
 mpc_v.opt_ref_param =[reshape(mpc_v.x_ref_arr, state_dim*(N+1),1);...
                       reshape(mpc_v.f_ref_arr, f_dim*N,1);...
                       reshape(mpc_v.fp_ref_arr, fp_dim*N,1);...
-                      reshape(mpc_v.contact_mat_arr, 2*N,1)];
+                      reshape(mpc_v.contact_mat_arr, 4*N,1)];
 
 % construct the mpc problem and solver
 mpc_p.nlp_prob = struct('f',mpc_v.cost_fcn, 'x',mpc_v.opt_variables, 'p',mpc_v.opt_ref_param, 'g',mpc_c.constraint_arr);
