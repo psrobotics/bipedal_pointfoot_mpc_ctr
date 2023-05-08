@@ -25,8 +25,8 @@ ctr.init_z = 0.3;
 
 ctr.x_init_tar_val = [0; 0; 0; 0; 0; ctr.init_z]; % init state
 ctr.dx_init_tar_val = [0; 0; 0; 0; 0; 0]; % init d state
-ctr.x_final_tar_val = [0; 0; 0.2*9*12; 0.4*9*0.1; 0; 0.3]; % final target state r p y; x y z
-ctr.dx_final_tar_val = [0; 0; 0.2*12; 0.4*0.1; 0; 0];
+ctr.x_final_tar_val = [0; 0; 0.2*9*0; 0.4*9*0.1; 0.4*9; 0.3]; % final target state r p y; x y z
+ctr.dx_final_tar_val = [0; 0; 0.2*0; 0.4*0.1; 0.4; 0];
 
 %ctr.contact_state_ratio = ctr.N.*[0.35 0.15 0.475 0.025]; % pull, jump, flight, impact
 ctr.contact_state_ratio = ctr.N.*[1/48 1/12 1/12 1/12 1/12 1/12 1/12 1/12 1/12 1/12 1/12 1/12]; % pull, jump, flight, impact
@@ -45,8 +45,8 @@ ctr.contact_state_ratio = ctr.N.*[1/48 1/12 1/12 1/12 1/12 1/12 1/12 1/12 1/12 1
 %                              0 * ones(2, ctr.contact_state_ratio(4))]; % no foot contact during last 2 phases
 
 ctr.gait_num = 24;
-ctr.contact_state_val = [repmat([1;1], 1, ctr.contact_state_ratio(1)),...
-                         repmat([0;0], 1, ctr.contact_state_ratio(1))];
+ctr.contact_state_val = [repmat([1;0], 1, ctr.contact_state_ratio(1)),...
+                         repmat([0;1], 1, ctr.contact_state_ratio(1))];
 ctr.contact_state_val = repmat(ctr.contact_state_val, 1, ctr.gait_num);
 % no foot contact during last 2 phases
                  

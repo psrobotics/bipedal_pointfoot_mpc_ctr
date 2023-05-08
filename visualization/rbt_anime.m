@@ -5,7 +5,7 @@ len = size_arr(2);
 
 figure(1);
 
- v = VideoWriter('3d_walk_4','MPEG-4');
+ v = VideoWriter('3d_walk_6','MPEG-4');
  v.FrameRate = N/T;
  open(v);
 
@@ -46,7 +46,7 @@ for k = 1:1:len-1
     
     view(-34,33);
     %view(90,0)
-    axis([-0.5,4,-1,1,0,1.2]);
+    axis([-0.5,4,-1,4,0,1.2]);
     
     plot_cube(r_mat,0.15,0.25,0.4,x_t(4:6)+r_mat*[0;0;0.2]);
 
