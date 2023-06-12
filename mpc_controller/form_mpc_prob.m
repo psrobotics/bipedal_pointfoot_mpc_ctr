@@ -134,5 +134,8 @@ mpc_v.opt_ref_param =[reshape(mpc_v.x_ref_arr, state_dim*(N+1),1);...
 mpc_p.nlp_prob = struct('f',mpc_v.cost_fcn, 'x',mpc_v.opt_variables, 'p',mpc_v.opt_ref_param, 'g',mpc_c.constraint_arr);
 mpc_p.solver = nlpsol('solver','ipopt',mpc_p.nlp_prob, ctr_p.opt_setting);
 
+%% gen c code
+
+
 end
 
